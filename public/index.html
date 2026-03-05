@@ -24,6 +24,7 @@
             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
           </svg>
           <span>投递记录</span>
+          <span class="badge" id="applicationsCount">0</span>
         </div>
         <div class="nav-item" data-view="jobs">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -71,6 +72,14 @@
               <div>
                 <span class="stat-label">正在跟进</span>
                 <span id="activeCount" class="stat-value">0</span>
+              </div>
+              <div class="stat-success">
+                <span class="stat-label">成功 Offer</span>
+                <span id="successCount" class="stat-value">0</span>
+              </div>
+              <div class="stat-failed">
+                <span class="stat-label">已结束</span>
+                <span id="failedCount" class="stat-value">0</span>
               </div>
               <div>
                 <span class="stat-label">最新更新</span>
@@ -145,6 +154,7 @@
           </div>
           <div class="detail-header-actions">
             <button id="editButton" class="ghost-button">编辑</button>
+            <button id="terminateButton" class="ghost-button terminate">结束投递</button>
             <button id="deleteButton" class="ghost-button danger">删除</button>
             <button id="closeDetail" class="icon-button" aria-label="关闭详情">
               <span></span>
@@ -154,10 +164,6 @@
         <section class="stage-flow" id="stageFlow" aria-label="流程阶段"></section>
         <section class="detail-body">
           <div class="detail-grid">
-            <div>
-              <p class="label">状态</p>
-              <p id="detailStatus" class="value"></p>
-            </div>
             <div>
               <p class="label">投递时间</p>
               <p id="detailApplied" class="value"></p>
@@ -243,14 +249,6 @@
             <input id="appliedDateInput" name="appliedDate" type="date" />
           </div>
           <div class="form-group">
-            <label for="statusInput">当前状态</label>
-            <input id="statusInput" name="status" type="text" placeholder="如：等待面试反馈" />
-          </div>
-          <div class="form-group">
-            <label for="contactInput">联系人 / 方式</label>
-            <input id="contactInput" name="contact" type="text" placeholder="如：hr@company.com" />
-          </div>
-          <div class="form-group">
             <label for="salaryInput">薪资预期</label>
             <input id="salaryInput" name="salaryRange" type="text" placeholder="如：20-25K * 14" />
           </div>
@@ -258,9 +256,15 @@
             <label for="sourceUrlInput">网申链接</label>
             <input id="sourceUrlInput" name="sourceUrl" type="url" placeholder="https://..." />
           </div>
-          <div class="form-group">
-            <label for="stagesInput">流程阶段（用逗号分隔）</label>
-            <input id="stagesInput" name="stages" type="text" placeholder="投递, HR 面, 技术面, Offer" />
+          <div class="form-group full">
+            <label>流程阶段设置（可自由添加或删除）</label>
+            <div class="custom-stages-container">
+              <div class="stages-tags" id="stagesTags"></div>
+              <div class="add-stage-input">
+                <input type="text" id="newStageInput" placeholder="输入新阶段名称" />
+                <button type="button" id="addStageBtn" class="ghost-button">+ 添加阶段</button>
+              </div>
+            </div>
           </div>
           <div class="form-group">
             <label for="currentStageSelect">当前所在阶段</label>

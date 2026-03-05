@@ -207,6 +207,8 @@ async function handleApi(req, res, pathname) {
         salaryRange: body.salaryRange !== undefined ? String(body.salaryRange).trim() : existing.salaryRange,
         sourceUrl: body.sourceUrl !== undefined ? String(body.sourceUrl).trim() : existing.sourceUrl,
         notes: body.notes !== undefined ? String(body.notes) : existing.notes,
+        isTerminated: body.isTerminated !== undefined ? Boolean(body.isTerminated) : existing.isTerminated,
+        terminatedAt: body.terminatedAt !== undefined ? String(body.terminatedAt) : existing.terminatedAt,
         updatedAt: new Date().toISOString()
       };
 

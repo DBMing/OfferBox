@@ -222,6 +222,7 @@ button {
 .icon-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.55rem;
   border-radius: 999px;
   padding: 0.65rem 1.4rem;
@@ -265,6 +266,17 @@ button {
 .ghost-button.danger {
   color: #ff4d5f;
   border-color: rgba(255, 77, 95, 0.35);
+}
+
+.ghost-button.terminate {
+  color: #64748b;
+  border-color: rgba(100, 116, 139, 0.35);
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.ghost-button.terminate:hover {
+  background: rgba(148, 163, 184, 0.15);
+  border-color: rgba(100, 116, 139, 0.5);
 }
 
 .icon-button {
@@ -351,7 +363,7 @@ button {
 .hero-stat {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.8rem;
+  gap: 1.5rem;
   align-content: start;
 }
 
@@ -383,6 +395,20 @@ button {
   background-clip: text;
 }
 
+.stat-success .stat-value {
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-failed .stat-value {
+  background: linear-gradient(135deg, #64748b, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .list-wrapper {
   display: flex;
   flex-direction: column;
@@ -406,11 +432,11 @@ button {
 }
 
 .application-card {
-  background: var(--surface);
-  border-radius: var(--radius-large);
-  padding: 1.6rem 2rem;
+  background: var(--card-gradient);
+  border-radius: var(--radius-medium);
+  padding: 1.4rem 1.8rem;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 1.2rem;
   border: 1px solid var(--surface-border);
@@ -419,23 +445,84 @@ button {
   transition: transform 0.45s var(--transition), box-shadow 0.45s var(--transition), border-color 0.45s var(--transition);
   animation: fadeUp 0.7s ease forwards;
   opacity: 0;
+  box-shadow: var(--shadow-soft);
 }
 
 .application-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 30px 70px rgba(90, 114, 210, 0.24);
-  border-color: rgba(110, 135, 255, 0.45);
+  box-shadow: var(--shadow-float);
+  border-color: rgba(106, 139, 255, 0.3);
+}
+
+.application-card.terminated {
+  opacity: 0.65;
+  filter: grayscale(0.4);
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.85), rgba(241, 245, 249, 0.88));
+}
+
+.application-card.terminated:hover {
+  opacity: 0.75;
+}
+
+.application-card.offer-achieved {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(251, 191, 36, 0.15));
+  border: 2px solid rgba(34, 197, 94, 0.4);
+  box-shadow: 0 8px 32px rgba(34, 197, 94, 0.25), 0 0 0 1px rgba(251, 191, 36, 0.2) inset;
+  position: relative;
+  overflow: hidden;
+}
+
+.application-card.offer-achieved::before {
+  content: '🎉';
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  animation: celebrate 2s ease-in-out infinite;
+}
+
+.application-card.offer-achieved:hover {
+  border-color: rgba(34, 197, 94, 0.6);
+  box-shadow: 0 12px 40px rgba(34, 197, 94, 0.35), 0 0 0 1px rgba(251, 191, 36, 0.3) inset;
+}
+
+.application-card.offer-achieved .avatar {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 10px 25px rgba(251, 191, 36, 0.4);
+}
+
+.application-card.offer-achieved .stage-chip {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(74, 222, 128, 0.2));
+  color: #059669;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  font-weight: 700;
+}
+
+@keyframes celebrate {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.2) rotate(-15deg);
+  }
+  75% {
+    transform: scale(1.2) rotate(15deg);
+  }
 }
 
 .application-card .avatar {
-  width: 3.2rem;
-  height: 3.2rem;
-  border-radius: 1.1rem;
-  display: grid;
-  place-items: center;
-  font-weight: 600;
-  color: var(--primary-strong);
-  background: rgba(109, 136, 255, 0.15);
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #ff6b6b, #ff8787);
+  box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+  flex-shrink: 0;
 }
 
 .application-card .card-info {
@@ -457,12 +544,44 @@ button {
 
 .application-card .stage-chip {
   justify-self: end;
-  background: rgba(116, 140, 255, 0.18);
-  color: var(--primary-strong);
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(192, 132, 252, 0.15));
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.25);
   border-radius: 999px;
-  padding: 0.4rem 0.9rem;
-  font-size: 0.85rem;
-  font-weight: 500;
+  padding: 0.35rem 0.9rem;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 网申进度按钮 */
+.progress-button {
+  min-width: 88px;
+  padding: 0.65rem 1.3rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.35s var(--transition);
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.25);
+  white-space: nowrap;
+  text-align: center;
+}
+
+.progress-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 35px rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.progress-button:disabled {
+  background: rgba(35, 45, 80, 0.12);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .empty-state {
@@ -888,6 +1007,95 @@ button {
   min-width: 120px;
 }
 
+/* 流程阶段容器 */
+.custom-stages-container {
+  margin-top: 0.5rem;
+  padding: 1.2rem;
+  border-radius: 12px;
+  background: rgba(242, 246, 255, 0.5);
+  border: 1px solid rgba(121, 137, 255, 0.2);
+}
+
+.stages-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  min-height: 40px;
+}
+
+.stage-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(106, 139, 255, 0.25);
+  animation: scaleIn 0.3s ease;
+}
+
+.stage-tag .remove-tag {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.stage-tag .remove-tag:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.add-stage-input {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.add-stage-input input {
+  flex: 1;
+  font: inherit;
+  border-radius: 12px;
+  border: 1px solid rgba(121, 137, 255, 0.25);
+  padding: 0.7rem 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  font-size: 0.9rem;
+}
+
+.add-stage-input input:focus {
+  outline: none;
+  border-color: rgba(111, 135, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(111, 135, 255, 0.18);
+}
+
+.add-stage-input button {
+  flex-shrink: 0;
+  padding: 0.7rem 1.2rem;
+  font-size: 0.9rem;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .app-footer {
   text-align: center;
   color: var(--text-soft);
@@ -927,7 +1135,8 @@ button {
   }
 
   .hero-stat {
-    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.2rem;
   }
 
   .application-card {
@@ -1007,7 +1216,7 @@ button {
   }
 
   .hero-stat {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
 
@@ -1062,6 +1271,23 @@ button {
   color: white;
   flex-shrink: 0;
   box-shadow: 0 10px 25px rgba(74, 222, 128, 0.3);
+}
+
+.job-card .card-info {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.job-card .card-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.job-card .card-meta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
 }
 
 /* 优先级标签 */

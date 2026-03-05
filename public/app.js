@@ -1,16 +1,17 @@
 const API_BASE = '/api/applications';
-const DEFAULT_STAGES = ['投递', 'HR 面试', '技术面试', '终面', 'Offer'];
+const DEFAULT_STAGES = ['投递', '初筛', '一面', '二面', '三面', 'HR面', 'Offer'];
 
 const elements = {
   mainContent: document.getElementById('mainContent'),
   list: document.getElementById('applicationList'),
   emptyState: document.getElementById('emptyState'),
   activeCount: document.getElementById('activeCount'),
+  successCount: document.getElementById('successCount'),
+  failedCount: document.getElementById('failedCount'),
   latestUpdate: document.getElementById('latestUpdate'),
   detailOverlay: document.getElementById('detailOverlay'),
   detailCompany: document.getElementById('detailCompany'),
   detailPosition: document.getElementById('detailTitle'),
-  detailStatus: document.getElementById('detailStatus'),
   detailApplied: document.getElementById('detailApplied'),
   detailJobType: document.getElementById('detailJobType'),
   detailLocation: document.getElementById('detailLocation'),
@@ -31,11 +32,8 @@ const elements = {
     location: document.getElementById('locationInput'),
     jobType: document.getElementById('jobTypeInput'),
     appliedDate: document.getElementById('appliedDateInput'),
-    status: document.getElementById('statusInput'),
-    contact: document.getElementById('contactInput'),
     salary: document.getElementById('salaryInput'),
     sourceUrl: document.getElementById('sourceUrlInput'),
-    stages: document.getElementById('stagesInput'),
     currentStage: document.getElementById('currentStageSelect'),
     notes: document.getElementById('notesInput')
   },
@@ -43,6 +41,7 @@ const elements = {
   refreshButton: document.getElementById('refreshButton'),
   closeDetail: document.getElementById('closeDetail'),
   editButton: document.getElementById('editButton'),
+  terminateButton: document.getElementById('terminateButton'),
   deleteButton: document.getElementById('deleteButton'),
   closeForm: document.getElementById('closeForm'),
   cancelForm: document.getElementById('cancelForm')
@@ -59,7 +58,10 @@ const state = {
   jobs: [],
   currentJobDetailId: null,
   jobFormMode: 'create',
-  editingJobId: null
+  editingJobId: null,
+
+  // 流程阶段相关
+  customStages: [...DEFAULT_STAGES]
 };
 
 const markdownRenderer = createMarkdownRenderer();
@@ -71,6 +73,9 @@ function initialize() {
   bindNavigationListeners();
   bindJobsEventListeners();
   hydrateStageSelect(DEFAULT_STAGES, 0);
+  // 初始化时加载两边的数据以更新徽章和统计
+  fetchApplications();
+  fetchJobs();
   handleRoute();
 }
 
@@ -120,6 +125,26 @@ function bindEventListeners() {
     openForm('edit', target);
   });
 
+  elements.terminateButton.addEventListener('click', async () => {
+    const target = state.applications.find((item) => item.id === state.currentDetailId);
+    if (!target) return;
+    const shouldTerminate = window.confirm(`确认结束「${target.company} · ${target.position}」的投递吗？\n\n这将标记此投递已结束（未成功）。`);
+    if (!shouldTerminate) return;
+    try {
+      const updated = await request(`${API_BASE}/${target.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isTerminated: true, terminatedAt: new Date().toISOString() })
+      });
+      mergeApplication(updated);
+      closeDetail();
+      renderList();
+      updateDashboard();
+    } catch (error) {
+      showError(error.message);
+    }
+  });
+
   elements.deleteButton.addEventListener('click', async () => {
     const target = state.applications.find((item) => item.id === state.currentDetailId);
     if (!target) return;
@@ -128,6 +153,11 @@ function bindEventListeners() {
     try {
       await request(`${API_BASE}/${target.id}`, { method: 'DELETE' });
       state.applications = state.applications.filter((item) => item.id !== target.id);
+      // 更新投递记录徽章
+      const countElement = document.getElementById('applicationsCount');
+      if (countElement) {
+        countElement.textContent = state.applications.length;
+      }
       closeDetail();
       renderList();
       updateDashboard();
@@ -157,11 +187,27 @@ function bindEventListeners() {
     }
   });
 
-  elements.inputs.stages.addEventListener('input', () => {
-    const stages = parseStagesInput(elements.inputs.stages.value);
-    const selected = Math.min(Number(elements.inputs.currentStage.value) || 0, stages.length - 1);
-    hydrateStageSelect(stages, selected);
-  });
+  // 添加阶段按钮
+  const addStageBtn = document.getElementById('addStageBtn');
+  const newStageInput = document.getElementById('newStageInput');
+  if (addStageBtn && newStageInput) {
+    addStageBtn.addEventListener('click', () => {
+      const stageName = newStageInput.value.trim();
+      if (stageName) {
+        state.customStages.push(stageName);
+        newStageInput.value = '';
+        renderCustomStages();
+        updateCurrentStageSelect(state.customStages);
+      }
+    });
+
+    newStageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addStageBtn.click();
+      }
+    });
+  }
 
   elements.form.addEventListener('submit', handleFormSubmit);
 
@@ -184,6 +230,13 @@ async function fetchApplications() {
     }
     const data = await response.json();
     state.applications = Array.isArray(data) ? data : [];
+
+    // 更新投递记录徽章
+    const countElement = document.getElementById('applicationsCount');
+    if (countElement) {
+      countElement.textContent = state.applications.length;
+    }
+
     renderList();
     updateDashboard();
   } catch (error) {
@@ -223,6 +276,18 @@ function sortByUpdatedAt(a, b) {
 function createApplicationCard(application, index) {
   const card = document.createElement('article');
   card.className = 'application-card';
+
+  // 检查是否到达最后阶段（Offer）
+  const stages = Array.isArray(application.stages) && application.stages.length
+    ? application.stages
+    : DEFAULT_STAGES;
+  const isOfferAchieved = application.currentStage === stages.length - 1;
+
+  if (application.isTerminated) {
+    card.classList.add('terminated');
+  } else if (isOfferAchieved) {
+    card.classList.add('offer-achieved');
+  }
   card.style.animationDelay = `${index * 70}ms`;
 
   const avatar = document.createElement('div');
@@ -240,16 +305,31 @@ function createApplicationCard(application, index) {
   meta.className = 'card-meta';
   meta.textContent = buildCardMeta(application);
 
+  info.appendChild(title);
+  info.appendChild(meta);
+
+  // 阶段标签
   const chip = document.createElement('span');
   chip.className = 'stage-chip';
   chip.textContent = getCurrentStageName(application);
 
-  info.appendChild(title);
-  info.appendChild(meta);
+  // 网申进度按钮
+  const progressBtn = document.createElement('button');
+  progressBtn.className = 'progress-button';
+  progressBtn.textContent = '网申进度';
+  progressBtn.disabled = !application.sourceUrl || !application.sourceUrl.trim();
+
+  if (application.sourceUrl && application.sourceUrl.trim()) {
+    progressBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.open(application.sourceUrl, '_blank', 'noopener,noreferrer');
+    });
+  }
 
   card.appendChild(avatar);
   card.appendChild(info);
   card.appendChild(chip);
+  card.appendChild(progressBtn);
 
   card.addEventListener('click', () => openDetail(application.id));
 
@@ -260,9 +340,6 @@ function buildCardMeta(application) {
   const pieces = [];
   if (application.location) {
     pieces.push(application.location);
-  }
-  if (application.status) {
-    pieces.push(application.status);
   }
   const dateText = formatDate(application.appliedDate);
   if (dateText) {
@@ -302,8 +379,18 @@ function openDetail(id) {
 function renderDetail(application) {
   elements.detailCompany.textContent = application.company || '—';
   elements.detailPosition.textContent = application.position || '—';
-  elements.detailStatus.textContent = application.status || '—';
   elements.detailApplied.textContent = formatDate(application.appliedDate) || '—';
+
+  // 更新结束投递按钮状态
+  if (application.isTerminated) {
+    elements.terminateButton.textContent = '已结束';
+    elements.terminateButton.disabled = true;
+    elements.terminateButton.style.opacity = '0.5';
+  } else {
+    elements.terminateButton.textContent = '结束投递';
+    elements.terminateButton.disabled = false;
+    elements.terminateButton.style.opacity = '1';
+  }
   elements.detailJobType.textContent = application.jobType || '—';
   elements.detailLocation.textContent = application.location || '—';
   elements.detailSalary.textContent = application.salaryRange || '—';
@@ -396,7 +483,8 @@ function openForm(mode, application = null) {
     elements.form.reset();
     elements.formTitle.textContent = '新增投递';
     elements.formSubtitle.textContent = '填写关键信息，让记录保持结构化';
-    elements.inputs.stages.value = DEFAULT_STAGES.join(', ');
+    state.customStages = [...DEFAULT_STAGES];
+    renderCustomStages();
     hydrateStageSelect(DEFAULT_STAGES, 0);
   } else if (application) {
     elements.formTitle.textContent = '编辑记录';
@@ -407,14 +495,13 @@ function openForm(mode, application = null) {
     elements.inputs.location.value = application.location || '';
     elements.inputs.jobType.value = application.jobType || '';
     elements.inputs.appliedDate.value = formatInputDate(application.appliedDate);
-    elements.inputs.status.value = application.status || '';
-    elements.inputs.contact.value = application.contact || '';
     elements.inputs.salary.value = application.salaryRange || '';
     elements.inputs.sourceUrl.value = application.sourceUrl || '';
     const stageList = Array.isArray(application.stages) && application.stages.length
       ? application.stages
       : DEFAULT_STAGES;
-    elements.inputs.stages.value = stageList.join(', ');
+    state.customStages = [...stageList];
+    renderCustomStages();
     hydrateStageSelect(stageList, Number(application.currentStage) || 0);
     elements.inputs.notes.value = application.notes || '';
   }
@@ -450,19 +537,16 @@ function hydrateStageSelect(stageList, selectedIndex = 0) {
 
 async function handleFormSubmit(event) {
   event.preventDefault();
-  const stageList = parseStagesInput(elements.inputs.stages.value);
   const payload = {
     company: elements.inputs.company.value.trim(),
     position: elements.inputs.position.value.trim(),
     location: elements.inputs.location.value.trim(),
     jobType: elements.inputs.jobType.value,
     appliedDate: elements.inputs.appliedDate.value,
-    status: elements.inputs.status.value.trim(),
-    contact: elements.inputs.contact.value.trim(),
     salaryRange: elements.inputs.salary.value.trim(),
     sourceUrl: elements.inputs.sourceUrl.value.trim(),
-    stages: stageList,
-    currentStage: Math.min(Number(elements.inputs.currentStage.value) || 0, stageList.length - 1),
+    stages: state.customStages,
+    currentStage: Math.min(Number(elements.inputs.currentStage.value) || 0, state.customStages.length - 1),
     notes: elements.inputs.notes.value
   };
 
@@ -479,6 +563,11 @@ async function handleFormSubmit(event) {
         body: JSON.stringify(payload)
       });
       state.applications.push(created);
+      // 更新投递记录徽章
+      const countElement = document.getElementById('applicationsCount');
+      if (countElement) {
+        countElement.textContent = state.applications.length;
+      }
       renderList();
       updateDashboard();
       closeForm();
@@ -557,12 +646,27 @@ function toggleButtonLoading(button, isLoading) {
 }
 
 function updateDashboard() {
+  // 正在跟进：未结束 且 未到最后阶段
   const activeCount = state.applications.filter((item) => {
+    if (item.isTerminated) return false;
     if (!Array.isArray(item.stages) || !item.stages.length) return false;
     return Number(item.currentStage) < item.stages.length - 1;
   }).length;
   elements.activeCount.textContent = activeCount;
 
+  // 成功：未结束 且 到达最后阶段（Offer）
+  const successCount = state.applications.filter((item) => {
+    if (item.isTerminated) return false;
+    if (!Array.isArray(item.stages) || !item.stages.length) return false;
+    return Number(item.currentStage) === item.stages.length - 1;
+  }).length;
+  elements.successCount.textContent = successCount;
+
+  // 失败：已标记结束
+  const failedCount = state.applications.filter((item) => item.isTerminated).length;
+  elements.failedCount.textContent = failedCount;
+
+  // 最新更新时间
   const latest = state.applications.reduce((acc, item) => {
     const current = item.updatedAt ? new Date(item.updatedAt).getTime() : 0;
     if (current > acc) {
@@ -611,6 +715,46 @@ function showError(message) {
   window.alert(message);
 }
 
+// ==================== 流程阶段处理 ====================
+
+function renderCustomStages() {
+  const container = document.getElementById('stagesTags');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  state.customStages.forEach((stage, index) => {
+    const tag = document.createElement('div');
+    tag.className = 'stage-tag';
+    tag.innerHTML = `
+      <span>${stage}</span>
+      <span class="remove-tag" data-index="${index}">×</span>
+    `;
+
+    tag.querySelector('.remove-tag').addEventListener('click', () => {
+      removeStage(index);
+    });
+
+    container.appendChild(tag);
+  });
+}
+
+function removeStage(index) {
+  if (state.customStages.length <= 1) {
+    showError('至少需要保留一个阶段');
+    return;
+  }
+  state.customStages.splice(index, 1);
+  renderCustomStages();
+  updateCurrentStageSelect(state.customStages);
+}
+
+function updateCurrentStageSelect(stages) {
+  const select = elements.inputs.currentStage;
+  const currentValue = Number(select.value) || 0;
+  hydrateStageSelect(stages, Math.min(currentValue, stages.length - 1));
+}
+
 // ==================== 导航和路由系统 ====================
 
 function bindNavigationListeners() {
@@ -637,10 +781,8 @@ function handleRoute() {
 
   if (view === 'applications') {
     switchView('applications');
-    fetchApplications();
   } else if (view === 'jobs') {
     switchView('jobs');
-    fetchJobs();
   } else {
     // 默认显示投递记录
     window.location.hash = '#/applications';
@@ -1077,6 +1219,12 @@ async function handleQuickApply(jobId) {
     }
 
     state.applications.push(application);
+
+    // 更新投递记录徽章
+    const countElement = document.getElementById('applicationsCount');
+    if (countElement) {
+      countElement.textContent = state.applications.length;
+    }
 
     // 刷新列表和统计
     if (state.currentView === 'jobs') {
