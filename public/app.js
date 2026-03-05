@@ -34,6 +34,7 @@ const elements = {
     status: document.getElementById('statusInput'),
     contact: document.getElementById('contactInput'),
     salary: document.getElementById('salaryInput'),
+    sourceUrl: document.getElementById('sourceUrlInput'),
     stages: document.getElementById('stagesInput'),
     currentStage: document.getElementById('currentStageSelect'),
     notes: document.getElementById('notesInput')
@@ -51,7 +52,14 @@ const state = {
   applications: [],
   currentDetailId: null,
   formMode: 'create',
-  editingId: null
+  editingId: null,
+
+  // 新增：招聘信息相关状态
+  currentView: 'applications',
+  jobs: [],
+  currentJobDetailId: null,
+  jobFormMode: 'create',
+  editingJobId: null
 };
 
 const markdownRenderer = createMarkdownRenderer();
@@ -60,8 +68,10 @@ initialize();
 
 function initialize() {
   bindEventListeners();
+  bindNavigationListeners();
+  bindJobsEventListeners();
   hydrateStageSelect(DEFAULT_STAGES, 0);
-  fetchApplications();
+  handleRoute();
 }
 
 function createMarkdownRenderer() {
@@ -128,6 +138,19 @@ function bindEventListeners() {
 
   elements.closeForm.addEventListener('click', () => closeForm());
   elements.cancelForm.addEventListener('click', () => closeForm());
+
+  // Bind top form action buttons
+  const cancelFormTop = document.getElementById('cancelFormTop');
+  const saveFormTop = document.getElementById('saveFormTop');
+  if (cancelFormTop) {
+    cancelFormTop.addEventListener('click', () => closeForm());
+  }
+  if (saveFormTop) {
+    saveFormTop.addEventListener('click', () => {
+      elements.form.requestSubmit();
+    });
+  }
+
   elements.formModal.addEventListener('click', (event) => {
     if (event.target.dataset.close === 'true') {
       closeForm();
@@ -283,10 +306,19 @@ function renderDetail(application) {
   elements.detailApplied.textContent = formatDate(application.appliedDate) || '—';
   elements.detailJobType.textContent = application.jobType || '—';
   elements.detailLocation.textContent = application.location || '—';
-  elements.detailContact.textContent = application.contact || '—';
   elements.detailSalary.textContent = application.salaryRange || '—';
   elements.detailUpdated.textContent = formatDateTime(application.updatedAt) || '—';
   elements.detailCreated.textContent = formatDateTime(application.createdAt) || '—';
+
+  // Make source URL clickable
+  const urlElement = document.getElementById('detailSourceUrl');
+  if (urlElement) {
+    if (application.sourceUrl && application.sourceUrl.trim()) {
+      urlElement.innerHTML = `<a href="${application.sourceUrl}" target="_blank" rel="noopener noreferrer">${application.sourceUrl}</a>`;
+    } else {
+      urlElement.textContent = '—';
+    }
+  }
 
   const renderedNotes = application.notes && application.notes.trim().length
     ? markdownRenderer.parse(application.notes)
@@ -359,9 +391,9 @@ async function changeStage(application, index) {
 function openForm(mode, application = null) {
   state.formMode = mode;
   state.editingId = application ? application.id : null;
-  elements.form.reset();
 
   if (mode === 'create') {
+    elements.form.reset();
     elements.formTitle.textContent = '新增投递';
     elements.formSubtitle.textContent = '填写关键信息，让记录保持结构化';
     elements.inputs.stages.value = DEFAULT_STAGES.join(', ');
@@ -369,6 +401,7 @@ function openForm(mode, application = null) {
   } else if (application) {
     elements.formTitle.textContent = '编辑记录';
     elements.formSubtitle.textContent = `${application.company} · ${application.position}`;
+    // Set form values directly without reset to preserve select values
     elements.inputs.company.value = application.company || '';
     elements.inputs.position.value = application.position || '';
     elements.inputs.location.value = application.location || '';
@@ -377,6 +410,7 @@ function openForm(mode, application = null) {
     elements.inputs.status.value = application.status || '';
     elements.inputs.contact.value = application.contact || '';
     elements.inputs.salary.value = application.salaryRange || '';
+    elements.inputs.sourceUrl.value = application.sourceUrl || '';
     const stageList = Array.isArray(application.stages) && application.stages.length
       ? application.stages
       : DEFAULT_STAGES;
@@ -421,11 +455,12 @@ async function handleFormSubmit(event) {
     company: elements.inputs.company.value.trim(),
     position: elements.inputs.position.value.trim(),
     location: elements.inputs.location.value.trim(),
-    jobType: elements.inputs.jobType.value.trim(),
+    jobType: elements.inputs.jobType.value,
     appliedDate: elements.inputs.appliedDate.value,
     status: elements.inputs.status.value.trim(),
     contact: elements.inputs.contact.value.trim(),
     salaryRange: elements.inputs.salary.value.trim(),
+    sourceUrl: elements.inputs.sourceUrl.value.trim(),
     stages: stageList,
     currentStage: Math.min(Number(elements.inputs.currentStage.value) || 0, stageList.length - 1),
     notes: elements.inputs.notes.value
@@ -446,8 +481,10 @@ async function handleFormSubmit(event) {
       state.applications.push(created);
       renderList();
       updateDashboard();
+      closeForm();
     } else if (state.formMode === 'edit' && state.editingId) {
-      const updated = await request(`${API_BASE}/${state.editingId}`, {
+      const editedAppId = state.editingId;
+      const updated = await request(`${API_BASE}/${editedAppId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -455,11 +492,11 @@ async function handleFormSubmit(event) {
       mergeApplication(updated);
       renderList();
       updateDashboard();
-      if (state.currentDetailId === state.editingId) {
-        renderDetail(updated);
-      }
+
+      // Close form and reopen detail page with updated data
+      closeForm();
+      openDetail(editedAppId);
     }
-    closeForm();
   } catch (error) {
     showError(error.message);
   }
@@ -572,4 +609,601 @@ function formatInputDate(value) {
 
 function showError(message) {
   window.alert(message);
+}
+
+// ==================== 导航和路由系统 ====================
+
+function bindNavigationListeners() {
+  // 绑定导航项点击事件
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      const view = item.dataset.view;
+      navigateTo(view);
+    });
+  });
+
+  // 监听路由变化
+  window.addEventListener('hashchange', handleRoute);
+  window.addEventListener('load', handleRoute);
+}
+
+function navigateTo(view) {
+  window.location.hash = `#/${view}`;
+}
+
+function handleRoute() {
+  const hash = window.location.hash || '#/';
+  const view = hash === '#/' || hash === '#/applications' ? 'applications' : hash.replace('#/', '');
+
+  if (view === 'applications') {
+    switchView('applications');
+    fetchApplications();
+  } else if (view === 'jobs') {
+    switchView('jobs');
+    fetchJobs();
+  } else {
+    // 默认显示投递记录
+    window.location.hash = '#/applications';
+  }
+}
+
+function switchView(viewName) {
+  state.currentView = viewName;
+
+  // 更新导航状态
+  document.querySelectorAll('.nav-item').forEach((item) => {
+    item.classList.toggle('active', item.dataset.view === viewName);
+  });
+
+  // 切换视图显示
+  const applicationsView = document.getElementById('applicationsView');
+  const jobsView = document.getElementById('jobsView');
+  const createButton = document.getElementById('createButton');
+  const createJobButton = document.getElementById('createJobButton');
+
+  if (viewName === 'applications') {
+    applicationsView.classList.remove('hidden');
+    jobsView.classList.add('hidden');
+    createButton.classList.remove('hidden');
+    createJobButton.classList.add('hidden');
+  } else if (viewName === 'jobs') {
+    applicationsView.classList.add('hidden');
+    jobsView.classList.remove('hidden');
+    createButton.classList.add('hidden');
+    createJobButton.classList.remove('hidden');
+    renderJobsList();
+    updateJobsStats();
+  }
+}
+
+async function fetchJobs() {
+  try {
+    const response = await fetch('/api/jobs');
+    if (!response.ok) {
+      throw new Error('无法加载招聘信息');
+    }
+    const data = await response.json();
+    state.jobs = Array.isArray(data) ? data : [];
+
+    // 更新徽章计数
+    const countElement = document.getElementById('jobsCount');
+    if (countElement) {
+      countElement.textContent = state.jobs.length;
+    }
+
+    if (state.currentView === 'jobs') {
+      renderJobsList();
+      updateJobsStats();
+    }
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+function updateJobsStats() {
+  const totalCount = state.jobs.length;
+  const pendingCount = state.jobs.filter(job => !job.applied).length;
+
+  const totalElement = document.getElementById('jobsTotalCount');
+  const pendingElement = document.getElementById('jobsPendingCount');
+
+  if (totalElement) totalElement.textContent = totalCount;
+  if (pendingElement) pendingElement.textContent = pendingCount;
+}
+
+// ==================== 招聘信息渲染 ====================
+
+function renderJobsList() {
+  const jobList = document.getElementById('jobList');
+  const emptyState = document.getElementById('jobsEmptyState');
+
+  jobList.innerHTML = '';
+
+  if (!state.jobs.length) {
+    emptyState.classList.remove('hidden');
+    return;
+  }
+
+  emptyState.classList.add('hidden');
+
+  const fragment = document.createDocumentFragment();
+
+  state.jobs
+    .slice()
+    .sort((a, b) => {
+      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return timeB - timeA;
+    })
+    .forEach((job, index) => {
+      const card = createJobCard(job, index);
+      fragment.appendChild(card);
+    });
+
+  jobList.appendChild(fragment);
+}
+
+function createJobCard(job, index) {
+  const card = document.createElement('article');
+  card.className = 'job-card';
+  card.style.animationDelay = `${index * 70}ms`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = getInitials(job.company);
+
+  const info = document.createElement('div');
+  info.className = 'card-info';
+
+  const title = document.createElement('p');
+  title.className = 'card-title';
+  title.textContent = `${job.company} · ${job.position}`;
+
+  const meta = document.createElement('p');
+  meta.className = 'card-meta';
+  const metaPieces = [];
+  if (job.location) metaPieces.push(job.location);
+  if (job.source) metaPieces.push(job.source);
+  meta.textContent = metaPieces.join(' · ');
+
+  info.appendChild(title);
+  info.appendChild(meta);
+
+  const badges = document.createElement('div');
+  badges.style.display = 'flex';
+  badges.style.flexDirection = 'column';
+  badges.style.gap = '0.4rem';
+  badges.style.alignItems = 'flex-end';
+
+  const priorityBadge = document.createElement('span');
+  priorityBadge.className = `priority-badge ${job.priority || 'medium'}`;
+  const priorityText = { high: '高优', medium: '中优', low: '低优' };
+  priorityBadge.textContent = priorityText[job.priority] || '中优';
+  badges.appendChild(priorityBadge);
+
+  if (job.interestLevel > 0) {
+    const stars = document.createElement('span');
+    stars.className = 'star-display';
+    stars.textContent = '★'.repeat(job.interestLevel) + '☆'.repeat(5 - job.interestLevel);
+    stars.title = `感兴趣程度: ${job.interestLevel}/5`;
+    badges.appendChild(stars);
+  }
+
+  // 按钮容器
+  const buttonGroup = document.createElement('div');
+  buttonGroup.style.display = 'flex';
+  buttonGroup.style.gap = '0.5rem';
+  buttonGroup.style.alignItems = 'center';
+
+  // 一键网申按钮
+  const quickApplyBtn = document.createElement('button');
+  quickApplyBtn.className = 'quick-apply-button';
+  quickApplyBtn.textContent = '一键网申';
+  quickApplyBtn.disabled = !job.sourceUrl || !job.sourceUrl.trim();
+
+  if (job.sourceUrl && job.sourceUrl.trim()) {
+    quickApplyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.open(job.sourceUrl, '_blank', 'noopener,noreferrer');
+    });
+  }
+
+  // 投递按钮
+  const applyBtn = document.createElement('button');
+  applyBtn.className = job.applied ? 'apply-button applied' : 'apply-button';
+  applyBtn.textContent = job.applied ? '已投递' : '投递';
+  applyBtn.disabled = job.applied;
+
+  if (!job.applied) {
+    applyBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleQuickApply(job.id);
+    });
+  }
+
+  buttonGroup.appendChild(quickApplyBtn);
+  buttonGroup.appendChild(applyBtn);
+
+  card.appendChild(avatar);
+  card.appendChild(info);
+  card.appendChild(badges);
+  card.appendChild(buttonGroup);
+
+  card.addEventListener('click', () => openJobDetail(job.id));
+
+  return card;
+}
+
+// ==================== 招聘信息详情 ====================
+
+function openJobDetail(jobId) {
+  const job = state.jobs.find((item) => item.id === jobId);
+  if (!job) return;
+  state.currentJobDetailId = jobId;
+  renderJobDetail(job);
+  const overlay = document.getElementById('jobDetailOverlay');
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden', 'false');
+  elements.mainContent.classList.add('blurred');
+}
+
+function renderJobDetail(job) {
+  document.getElementById('jobDetailCompany').textContent = job.company || '—';
+  document.getElementById('jobDetailTitle').textContent = job.position || '—';
+  document.getElementById('jobDetailLocation').textContent = job.location || '—';
+  document.getElementById('jobDetailJobType').textContent = job.jobType || '—';
+  document.getElementById('jobDetailSource').textContent = job.source || '—';
+  document.getElementById('jobDetailDeadline').textContent = formatDate(job.deadline) || '—';
+  document.getElementById('jobDetailUpdated').textContent = formatDateTime(job.updatedAt) || '—';
+
+  // Make source URL clickable
+  const urlElement = document.getElementById('jobDetailSourceUrl');
+  if (job.sourceUrl && job.sourceUrl.trim()) {
+    urlElement.innerHTML = `<a href="${job.sourceUrl}" target="_blank" rel="noopener noreferrer">${job.sourceUrl}</a>`;
+  } else {
+    urlElement.textContent = '—';
+  }
+
+  const priorityBadge = document.getElementById('jobPriorityBadge');
+  priorityBadge.className = `priority-badge ${job.priority || 'medium'}`;
+  const priorityText = { high: '高优先级', medium: '中优先级', low: '低优先级' };
+  priorityBadge.textContent = priorityText[job.priority] || '中优先级';
+
+  document.getElementById('jobInterestStars').textContent = job.interestLevel > 0
+    ? `感兴趣: ${'★'.repeat(job.interestLevel)}${'☆'.repeat(5 - job.interestLevel)}`
+    : '';
+
+  document.getElementById('jobMatchStars').textContent = job.matchScore > 0
+    ? `适配度: ${'★'.repeat(job.matchScore)}${'☆'.repeat(5 - job.matchScore)}`
+    : '';
+
+  document.getElementById('jobDetailDescription').innerHTML = job.description && job.description.trim()
+    ? markdownRenderer.parse(job.description)
+    : '<p>暂无职位描述</p>';
+
+  document.getElementById('jobDetailRequirements').innerHTML = job.requirements && job.requirements.trim()
+    ? markdownRenderer.parse(job.requirements)
+    : '<p>暂无任职要求</p>';
+
+  document.getElementById('jobDetailNotes').innerHTML = job.notes && job.notes.trim()
+    ? markdownRenderer.parse(job.notes)
+    : '<p>暂无个人备注</p>';
+
+  const applyBtn = document.getElementById('applyJobButton');
+  applyBtn.disabled = job.applied;
+  applyBtn.textContent = job.applied ? '已投递' : '投递此职位';
+}
+
+function closeJobDetail() {
+  const overlay = document.getElementById('jobDetailOverlay');
+  overlay.classList.remove('active');
+  overlay.setAttribute('aria-hidden', 'true');
+  state.currentJobDetailId = null;
+  elements.mainContent.classList.remove('blurred');
+}
+
+// ==================== 招聘信息表单 ====================
+
+function openJobForm(mode, job = null) {
+  state.jobFormMode = mode;
+  state.editingJobId = job ? job.id : null;
+  const form = document.getElementById('jobForm');
+
+  if (mode === 'create') {
+    form.reset();
+    document.getElementById('jobFormTitle').textContent = '新增招聘信息';
+    document.getElementById('jobFormSubtitle').textContent = '记录你感兴趣的职位机会';
+  } else if (job) {
+    document.getElementById('jobFormTitle').textContent = '编辑招聘信息';
+    document.getElementById('jobFormSubtitle').textContent = `${job.company} · ${job.position}`;
+
+    // Set form values directly without reset to preserve select values
+    document.getElementById('jobCompanyInput').value = job.company || '';
+    document.getElementById('jobPositionInput').value = job.position || '';
+    document.getElementById('jobLocationInput').value = job.location || '';
+    document.getElementById('jobJobTypeInput').value = job.jobType || '';
+    document.getElementById('jobSourceInput').value = job.source || '';
+    document.getElementById('jobSourceUrlInput').value = job.sourceUrl || '';
+    document.getElementById('jobDeadlineInput').value = formatInputDate(job.deadline);
+    document.getElementById('jobPriorityInput').value = job.priority || 'medium';
+    document.getElementById('jobDescriptionInput').value = job.description || '';
+    document.getElementById('jobRequirementsInput').value = job.requirements || '';
+    document.getElementById('jobNotesInput').value = job.notes || '';
+
+    setStarValue('jobInterestInput', job.interestLevel || 0);
+    setStarValue('jobMatchInput', job.matchScore || 0);
+  }
+
+  const modal = document.getElementById('jobFormModal');
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden', 'false');
+  elements.mainContent.classList.add('blurred');
+  document.getElementById('jobCompanyInput').focus();
+}
+
+function closeJobForm() {
+  const modal = document.getElementById('jobFormModal');
+  modal.classList.remove('active');
+  modal.setAttribute('aria-hidden', 'true');
+  state.editingJobId = null;
+  elements.mainContent.classList.remove('blurred');
+}
+
+async function handleJobFormSubmit(event) {
+  event.preventDefault();
+
+  const payload = {
+    company: document.getElementById('jobCompanyInput').value.trim(),
+    position: document.getElementById('jobPositionInput').value.trim(),
+    location: document.getElementById('jobLocationInput').value.trim(),
+    jobType: document.getElementById('jobJobTypeInput').value,
+    source: document.getElementById('jobSourceInput').value,
+    sourceUrl: document.getElementById('jobSourceUrlInput').value.trim(),
+    deadline: document.getElementById('jobDeadlineInput').value,
+    priority: document.getElementById('jobPriorityInput').value,
+    interestLevel: Number(document.getElementById('jobInterestInput').dataset.value) || 0,
+    matchScore: Number(document.getElementById('jobMatchInput').dataset.value) || 0,
+    description: document.getElementById('jobDescriptionInput').value,
+    requirements: document.getElementById('jobRequirementsInput').value,
+    notes: document.getElementById('jobNotesInput').value
+  };
+
+  if (!payload.company || !payload.position) {
+    showError('公司与职位名称为必填项');
+    return;
+  }
+
+  try {
+    if (state.jobFormMode === 'create') {
+      const created = await request('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      state.jobs.push(created);
+      renderJobsList();
+    } else if (state.jobFormMode === 'edit' && state.editingJobId) {
+      const editedJobId = state.editingJobId;
+      const updated = await request(`/api/jobs/${editedJobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const index = state.jobs.findIndex((item) => item.id === updated.id);
+      if (index !== -1) {
+        state.jobs[index] = updated;
+      }
+      renderJobsList();
+
+      // Close form and reopen detail page with updated data
+      closeJobForm();
+      openJobDetail(editedJobId);
+    }
+
+    // 更新徽章计数和统计
+    document.getElementById('jobsCount').textContent = state.jobs.length;
+    updateJobsStats();
+
+    if (state.jobFormMode === 'create') {
+      closeJobForm();
+    }
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+// ==================== 星级输入组件 ====================
+
+function initStarInputs() {
+  document.querySelectorAll('.star-input').forEach((element) => {
+    const spans = element.querySelectorAll('span');
+    let currentValue = Number(element.dataset.value) || 0;
+
+    // 初始化显示
+    updateStars(spans, currentValue);
+
+    spans.forEach((star) => {
+      star.addEventListener('click', () => {
+        const value = Number(star.dataset.value);
+        currentValue = value;
+        element.dataset.value = value;
+        updateStars(spans, value);
+      });
+
+      star.addEventListener('mouseenter', () => {
+        const value = Number(star.dataset.value);
+        updateStars(spans, value);
+      });
+    });
+
+    element.addEventListener('mouseleave', () => {
+      updateStars(spans, currentValue);
+    });
+  });
+}
+
+function updateStars(spans, value) {
+  spans.forEach((star, index) => {
+    star.classList.toggle('active', index < value);
+  });
+}
+
+function setStarValue(elementId, value) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  element.dataset.value = value;
+  const spans = element.querySelectorAll('span');
+  updateStars(spans, value);
+}
+
+// ==================== 一键投递功能 ====================
+
+async function handleQuickApply(jobId) {
+  if (!confirm('确认将此职位转为投递记录吗？')) {
+    return;
+  }
+
+  try {
+    const response = await request(`/api/jobs/${jobId}/apply`, {
+      method: 'POST'
+    });
+
+    const { job, application } = response;
+
+    // 更新本地状态
+    const jobIndex = state.jobs.findIndex((item) => item.id === jobId);
+    if (jobIndex !== -1) {
+      state.jobs[jobIndex] = job;
+    }
+
+    state.applications.push(application);
+
+    // 刷新列表和统计
+    if (state.currentView === 'jobs') {
+      renderJobsList();
+      updateJobsStats();
+    }
+
+    alert('已成功创建投递记录！');
+
+    // 跳转到投递记录详情
+    setTimeout(() => {
+      navigateTo('applications');
+      openDetail(application.id);
+    }, 500);
+
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+// ==================== 招聘信息事件绑定 ====================
+
+function bindJobsEventListeners() {
+  // 新增招聘信息按钮
+  const createJobButton = document.getElementById('createJobButton');
+  if (createJobButton) {
+    createJobButton.addEventListener('click', () => openJobForm('create'));
+  }
+
+  // 详情页按钮
+  const closeJobDetailBtn = document.getElementById('closeJobDetail');
+  if (closeJobDetailBtn) {
+    closeJobDetailBtn.addEventListener('click', closeJobDetail);
+  }
+
+  const editJobBtn = document.getElementById('editJobButton');
+  if (editJobBtn) {
+    editJobBtn.addEventListener('click', () => {
+      const job = state.jobs.find((item) => item.id === state.currentJobDetailId);
+      if (job) {
+        closeJobDetail();
+        openJobForm('edit', job);
+      }
+    });
+  }
+
+  const deleteJobBtn = document.getElementById('deleteJobButton');
+  if (deleteJobBtn) {
+    deleteJobBtn.addEventListener('click', async () => {
+      const job = state.jobs.find((item) => item.id === state.currentJobDetailId);
+      if (!job) return;
+
+      if (!confirm(`确认删除「${job.company} · ${job.position}」吗？`)) return;
+
+      try {
+        await request(`/api/jobs/${job.id}`, { method: 'DELETE' });
+        state.jobs = state.jobs.filter((item) => item.id !== job.id);
+        closeJobDetail();
+        renderJobsList();
+        document.getElementById('jobsCount').textContent = state.jobs.length;
+        updateJobsStats();
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+  }
+
+  const applyJobBtn = document.getElementById('applyJobButton');
+  if (applyJobBtn) {
+    applyJobBtn.addEventListener('click', async () => {
+      const job = state.jobs.find((item) => item.id === state.currentJobDetailId);
+      if (!job || job.applied) return;
+
+      closeJobDetail();
+      await handleQuickApply(job.id);
+    });
+  }
+
+  // 表单相关
+  const closeJobFormBtn = document.getElementById('closeJobForm');
+  if (closeJobFormBtn) {
+    closeJobFormBtn.addEventListener('click', closeJobForm);
+  }
+
+  const cancelJobFormBtn = document.getElementById('cancelJobForm');
+  if (cancelJobFormBtn) {
+    cancelJobFormBtn.addEventListener('click', closeJobForm);
+  }
+
+  // Bind top job form action buttons
+  const cancelJobFormTop = document.getElementById('cancelJobFormTop');
+  const saveJobFormTop = document.getElementById('saveJobFormTop');
+  if (cancelJobFormTop) {
+    cancelJobFormTop.addEventListener('click', closeJobForm);
+  }
+  if (saveJobFormTop) {
+    saveJobFormTop.addEventListener('click', () => {
+      const jobForm = document.getElementById('jobForm');
+      if (jobForm) {
+        jobForm.requestSubmit();
+      }
+    });
+  }
+
+  const jobForm = document.getElementById('jobForm');
+  if (jobForm) {
+    jobForm.addEventListener('submit', handleJobFormSubmit);
+  }
+
+  const jobFormModal = document.getElementById('jobFormModal');
+  if (jobFormModal) {
+    jobFormModal.addEventListener('click', (event) => {
+      if (event.target.dataset.close === 'true') {
+        closeJobForm();
+      }
+    });
+  }
+
+  const jobDetailOverlay = document.getElementById('jobDetailOverlay');
+  if (jobDetailOverlay) {
+    jobDetailOverlay.addEventListener('click', (event) => {
+      if (event.target.dataset.close === 'true') {
+        closeJobDetail();
+      }
+    });
+  }
+
+  // 初始化星级输入
+  initStarInputs();
 }

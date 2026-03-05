@@ -14,6 +14,27 @@
   </head>
   <body>
     <div class="app-shell">
+      <nav class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo-small">OB</div>
+          <span class="sidebar-title">OfferBox</span>
+        </div>
+        <div class="nav-item active" data-view="applications">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span>投递记录</span>
+        </div>
+        <div class="nav-item" data-view="jobs">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+          </svg>
+          <span>招聘信息库</span>
+          <span class="badge" id="jobsCount">0</span>
+        </div>
+      </nav>
+
+      <div class="main-wrapper">
       <header class="app-header">
         <div class="branding">
           <div class="logo">TL</div>
@@ -32,46 +53,86 @@
             </svg>
           </button>
           <button id="createButton" class="primary-button">新增投递</button>
+          <button id="createJobButton" class="primary-button hidden">新增招聘信息</button>
         </div>
       </header>
 
       <main class="main-content" id="mainContent">
-        <section class="hero">
-          <div class="hero-text">
-            <h1>一页掌握全部招聘动向</h1>
-            <p>
-              从投递、面试到拿下 Offer，把散落在邮箱和表格里的细节统统收纳。轻盈柔和的界面与丝滑的交互，让职业旅程的每一步都更有掌控感。
-            </p>
-          </div>
-          <div class="hero-stat">
-            <div>
-              <span class="stat-label">正在跟进</span>
-              <span id="activeCount" class="stat-value">0</span>
+        <!-- 投递记录视图 -->
+        <div id="applicationsView">
+          <section class="hero">
+            <div class="hero-text">
+              <h1>一页掌握全部招聘动向</h1>
+              <p>
+                从投递、面试到拿下 Offer，把散落在邮箱和表格里的细节统统收纳。轻盈柔和的界面与丝滑的交互，让职业旅程的每一步都更有掌控感。
+              </p>
             </div>
-            <div>
-              <span class="stat-label">最新更新</span>
-              <span id="latestUpdate" class="stat-value">--</span>
+            <div class="hero-stat">
+              <div>
+                <span class="stat-label">正在跟进</span>
+                <span id="activeCount" class="stat-value">0</span>
+              </div>
+              <div>
+                <span class="stat-label">最新更新</span>
+                <span id="latestUpdate" class="stat-value">--</span>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="list-wrapper">
-          <div class="list-headline">
-            <h2>投递记录</h2>
-            <p>聚焦关键节点，随时展开详情，沉浸式地复盘你的进度。</p>
-          </div>
-          <div id="applicationList" class="application-list" aria-live="polite"></div>
-          <div id="emptyState" class="empty-state hidden">
-            <div class="empty-illustration" aria-hidden="true"></div>
-            <p class="empty-title">还没有记录</p>
-            <p class="empty-desc">点击右上角「新增投递」开启你的第一份职业旅程记录。</p>
-          </div>
-        </section>
+          <section class="list-wrapper">
+            <div class="list-headline">
+              <h2>投递记录</h2>
+              <p>聚焦关键节点，随时展开详情，沉浸式地复盘你的进度。</p>
+            </div>
+            <div id="applicationList" class="application-list" aria-live="polite"></div>
+            <div id="emptyState" class="empty-state hidden">
+              <div class="empty-illustration" aria-hidden="true"></div>
+              <p class="empty-title">还没有记录</p>
+              <p class="empty-desc">点击右上角「新增投递」开启你的第一份职业旅程记录。</p>
+            </div>
+          </section>
+        </div>
+
+        <!-- 招聘信息库视图 -->
+        <div id="jobsView" class="hidden">
+          <section class="hero">
+            <div class="hero-text">
+              <h1>招聘信息收集站</h1>
+              <p>
+                收集你在各大招聘平台看到的心仪职位，标记优先级和感兴趣程度。当准备好投递时，一键转化为投递记录，开启你的求职之旅。
+              </p>
+            </div>
+            <div class="hero-stat">
+              <div>
+                <span class="stat-label">收集总数</span>
+                <span id="jobsTotalCount" class="stat-value">0</span>
+              </div>
+              <div>
+                <span class="stat-label">待投递</span>
+                <span id="jobsPendingCount" class="stat-value">0</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="list-wrapper">
+            <div class="list-headline">
+              <h2>招聘信息库</h2>
+              <p>收集并管理你感兴趣的职位，一键转化为投递记录。</p>
+            </div>
+            <div id="jobList" class="application-list" aria-live="polite"></div>
+            <div id="jobsEmptyState" class="empty-state hidden">
+              <div class="empty-illustration" aria-hidden="true"></div>
+              <p class="empty-title">还没有招聘信息</p>
+              <p class="empty-desc">点击右上角「新增招聘信息」开始收集你感兴趣的职位。</p>
+            </div>
+          </section>
+        </div>
       </main>
 
       <footer class="app-footer">
         <p>Made with patience & focus · 专注你的每一次投递</p>
       </footer>
+      </div>
     </div>
 
     <div id="detailOverlay" class="overlay" aria-hidden="true">
@@ -110,10 +171,6 @@
               <p id="detailLocation" class="value"></p>
             </div>
             <div>
-              <p class="label">HR / 联系方式</p>
-              <p id="detailContact" class="value"></p>
-            </div>
-            <div>
               <p class="label">薪资预期</p>
               <p id="detailSalary" class="value"></p>
             </div>
@@ -124,6 +181,10 @@
             <div>
               <p class="label">创建时间</p>
               <p id="detailCreated" class="value"></p>
+            </div>
+            <div class="full-width">
+              <p class="label">网申链接</p>
+              <p id="detailSourceUrl" class="value link-value"></p>
             </div>
           </div>
           <div class="notes-section">
@@ -149,6 +210,10 @@
             <span></span>
           </button>
         </header>
+        <div class="form-actions-top">
+          <button type="button" id="cancelFormTop" class="ghost-button">取消</button>
+          <button type="button" id="saveFormTop" class="primary-button">保存</button>
+        </div>
         <form id="applicationForm" class="application-form">
           <div class="form-group">
             <label for="companyInput">公司名称 *</label>
@@ -164,7 +229,14 @@
           </div>
           <div class="form-group">
             <label for="jobTypeInput">工作性质</label>
-            <input id="jobTypeInput" name="jobType" type="text" placeholder="校招 / 实习 / 全职" />
+            <select id="jobTypeInput" name="jobType">
+              <option value="">请选择</option>
+              <option value="暑期实习">暑期实习</option>
+              <option value="日常实习">日常实习</option>
+              <option value="校招">校招</option>
+              <option value="全职">全职</option>
+              <option value="实习">实习</option>
+            </select>
           </div>
           <div class="form-group">
             <label for="appliedDateInput">投递日期</label>
@@ -181,6 +253,10 @@
           <div class="form-group">
             <label for="salaryInput">薪资预期</label>
             <input id="salaryInput" name="salaryRange" type="text" placeholder="如：20-25K * 14" />
+          </div>
+          <div class="form-group">
+            <label for="sourceUrlInput">网申链接</label>
+            <input id="sourceUrlInput" name="sourceUrl" type="url" placeholder="https://..." />
           </div>
           <div class="form-group">
             <label for="stagesInput">流程阶段（用逗号分隔）</label>
@@ -201,6 +277,169 @@
           </div>
           <div class="form-actions">
             <button type="button" id="cancelForm" class="ghost-button">取消</button>
+            <button type="submit" class="primary-button">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 招聘信息详情弹窗 -->
+    <div id="jobDetailOverlay" class="overlay" aria-hidden="true">
+      <div class="overlay-backdrop" data-close="true"></div>
+      <article class="detail-card" role="dialog" aria-modal="true">
+        <header class="detail-header">
+          <div>
+            <p id="jobDetailCompany" class="detail-company"></p>
+            <h2 id="jobDetailTitle" class="detail-position"></h2>
+            <div class="job-badges">
+              <span id="jobPriorityBadge" class="priority-badge"></span>
+              <span id="jobInterestStars" class="star-display"></span>
+              <span id="jobMatchStars" class="star-display"></span>
+            </div>
+          </div>
+          <div class="detail-header-actions">
+            <button id="applyJobButton" class="primary-button apply-btn">投递此职位</button>
+            <button id="editJobButton" class="ghost-button">编辑</button>
+            <button id="deleteJobButton" class="ghost-button danger">删除</button>
+            <button id="closeJobDetail" class="icon-button" aria-label="关闭详情">
+              <span></span>
+            </button>
+          </div>
+        </header>
+        <section class="detail-body">
+          <div class="detail-grid">
+            <div><p class="label">工作地点</p><p id="jobDetailLocation" class="value"></p></div>
+            <div><p class="label">工作性质</p><p id="jobDetailJobType" class="value"></p></div>
+            <div><p class="label">招聘来源</p><p id="jobDetailSource" class="value"></p></div>
+            <div><p class="label">截止日期</p><p id="jobDetailDeadline" class="value"></p></div>
+            <div><p class="label">更新时间</p><p id="jobDetailUpdated" class="value"></p></div>
+            <div class="full-width"><p class="label">网申链接</p><p id="jobDetailSourceUrl" class="value link-value"></p></div>
+          </div>
+          <div class="notes-section" id="jobDescSection">
+            <div class="notes-headline">
+              <h3>职位描述</h3>
+            </div>
+            <div id="jobDetailDescription" class="notes-content markdown"></div>
+          </div>
+          <div class="notes-section" id="jobReqSection">
+            <div class="notes-headline">
+              <h3>任职要求</h3>
+            </div>
+            <div id="jobDetailRequirements" class="notes-content markdown"></div>
+          </div>
+          <div class="notes-section">
+            <div class="notes-headline">
+              <h3>个人备注</h3>
+            </div>
+            <div id="jobDetailNotes" class="notes-content markdown"></div>
+          </div>
+        </section>
+      </article>
+    </div>
+
+    <!-- 招聘信息表单弹窗 -->
+    <div id="jobFormModal" class="form-modal" aria-hidden="true">
+      <div class="form-modal-backdrop" data-close="true"></div>
+      <div class="form-panel" role="dialog" aria-modal="true">
+        <header class="form-header">
+          <div>
+            <h2 id="jobFormTitle">新增招聘信息</h2>
+            <p id="jobFormSubtitle">记录你感兴趣的职位机会</p>
+          </div>
+          <button id="closeJobForm" class="icon-button" aria-label="关闭表单">
+            <span></span>
+          </button>
+        </header>
+        <div class="form-actions-top">
+          <button type="button" id="cancelJobFormTop" class="ghost-button">取消</button>
+          <button type="button" id="saveJobFormTop" class="primary-button">保存</button>
+        </div>
+        <form id="jobForm" class="application-form">
+          <div class="form-group">
+            <label for="jobCompanyInput">公司名称 *</label>
+            <input id="jobCompanyInput" name="company" type="text" required placeholder="如：Nebula Labs" />
+          </div>
+          <div class="form-group">
+            <label for="jobPositionInput">职位名称 *</label>
+            <input id="jobPositionInput" name="position" type="text" required placeholder="如：前端工程师" />
+          </div>
+          <div class="form-group">
+            <label for="jobLocationInput">工作城市</label>
+            <input id="jobLocationInput" name="location" type="text" placeholder="如：上海" />
+          </div>
+          <div class="form-group">
+            <label for="jobJobTypeInput">工作性质</label>
+            <select id="jobJobTypeInput" name="jobType">
+              <option value="">请选择</option>
+              <option value="暑期实习">暑期实习</option>
+              <option value="日常实习">日常实习</option>
+              <option value="校招">校招</option>
+              <option value="全职">全职</option>
+              <option value="实习">实习</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="jobSourceInput">招聘来源</label>
+            <select id="jobSourceInput" name="source">
+              <option value="">请选择</option>
+              <option value="微信">微信</option>
+              <option value="Boss直聘">Boss直聘</option>
+              <option value="猎聘">猎聘</option>
+              <option value="智联招聘">智联招聘</option>
+              <option value="内推">内推</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="jobSourceUrlInput">网申链接</label>
+            <input id="jobSourceUrlInput" name="sourceUrl" type="url" placeholder="https://..." />
+          </div>
+          <div class="form-group">
+            <label for="jobDeadlineInput">截止日期</label>
+            <input id="jobDeadlineInput" name="deadline" type="date" />
+          </div>
+          <div class="form-group">
+            <label for="jobPriorityInput">优先级</label>
+            <select id="jobPriorityInput" name="priority">
+              <option value="low">低</option>
+              <option value="medium" selected>中</option>
+              <option value="high">高</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="jobInterestInput">感兴趣程度</label>
+            <div class="star-input" id="jobInterestInput" data-value="0">
+              <span data-value="1">★</span>
+              <span data-value="2">★</span>
+              <span data-value="3">★</span>
+              <span data-value="4">★</span>
+              <span data-value="5">★</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="jobMatchInput">适配度评分</label>
+            <div class="star-input" id="jobMatchInput" data-value="0">
+              <span data-value="1">★</span>
+              <span data-value="2">★</span>
+              <span data-value="3">★</span>
+              <span data-value="4">★</span>
+              <span data-value="5">★</span>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label for="jobDescriptionInput">职位描述（支持 Markdown）</label>
+            <textarea id="jobDescriptionInput" name="description" rows="4" placeholder="职位职责、技术栈等"></textarea>
+          </div>
+          <div class="form-group full">
+            <label for="jobRequirementsInput">任职要求（支持 Markdown）</label>
+            <textarea id="jobRequirementsInput" name="requirements" rows="4" placeholder="学历、经验、技能要求等"></textarea>
+          </div>
+          <div class="form-group full">
+            <label for="jobNotesInput">个人备注（支持 Markdown）</label>
+            <textarea id="jobNotesInput" name="notes" rows="4" placeholder="你的想法、准备计划等"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="cancelJobForm" class="ghost-button">取消</button>
             <button type="submit" class="primary-button">保存</button>
           </div>
         </form>
