@@ -1,0 +1,47 @@
+[
+  {
+    "id": "sample-1",
+    "company": "Nebula Labs",
+    "position": "前端工程师",
+    "location": "上海",
+    "jobType": "实习/校招",
+    "appliedDate": "2024-08-22",
+    "status": "简历已投递",
+    "contact": "lisa.hr@nebula.com",
+    "salaryRange": "20-25K * 14",
+    "stages": [
+      "投递",
+      "笔试",
+      "一面",
+      "二面",
+      "HR 面",
+      "Offer"
+    ],
+    "currentStage": 2,
+    "notes": "- 需要准备前端基础八股\n- 强调项目中的可观测性建设\n- **加分项**：对动效与设计敏感",
+    "createdAt": "2024-08-22T09:00:00.000Z",
+    "updatedAt": "2024-08-25T10:30:00.000Z"
+  },
+  {
+    "id": "sample-2",
+    "company": "Aurora Vision",
+    "position": "产品经理",
+    "location": "北京",
+    "jobType": "全职",
+    "appliedDate": "2024-08-18",
+    "status": "等待面试反馈",
+    "contact": "hr@auroravision.com",
+    "salaryRange": "25-30K * 16",
+    "stages": [
+      "投递",
+      "HR 沟通",
+      "业务面",
+      "主管面",
+      "Offer"
+    ],
+    "currentStage": 4,
+    "notes": "1. 产品方法论讲解要聚焦数据\n2. 准备一份亮点项目的 demo 视频链接\n3. 他们很关注跨团队协作案例",
+    "createdAt": "2024-08-18T08:30:00.000Z",
+    "updatedAt": "2026-03-05T09:01:55.266Z"
+  }
+]

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>投递旅程 | 招聘投递记录面板</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="branding">
+          <div class="logo">TL</div>
+          <div>
+            <p class="title">投递旅程</p>
+            <p class="subtitle">用极简灵动的方式，记录你的每一次跃迁</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="refreshButton" class="ghost-button" aria-label="刷新数据">
+            <span>刷新</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M20 11c0-4.418-3.582-8-8-8-2.607 0-4.926 1.245-6.393 3.173L3 4v6h6L6.707 7.707C7.757 6.195 9.753 5 12 5c3.309 0 6 2.691 6 6 0 1.93-.894 3.646-2.285 4.756l1.285 1.542C19.19 15.888 20 13.561 20 11zm-8 8c-3.309 0-6-2.691-6-6 0-1.93.894-3.646 2.285-4.756L7 6.702C4.81 8.112 3 10.439 3 13c0 4.418 3.582 8 8 8 2.607 0 4.926-1.245 6.393-3.173L21 22v-6h-6l2.293 2.293C16.243 18.805 14.247 20 12 20z"
+              ></path>
+            </svg>
+          </button>
+          <button id="createButton" class="primary-button">新增投递</button>
+        </div>
+      </header>
+
+      <main class="main-content" id="mainContent">
+        <section class="hero">
+          <div class="hero-text">
+            <h1>一页掌握全部招聘动向</h1>
+            <p>
+              从投递、面试到拿下 Offer，把散落在邮箱和表格里的细节统统收纳。轻盈柔和的界面与丝滑的交互，让职业旅程的每一步都更有掌控感。
+            </p>
+          </div>
+          <div class="hero-stat">
+            <div>
+              <span class="stat-label">正在跟进</span>
+              <span id="activeCount" class="stat-value">0</span>
+            </div>
+            <div>
+              <span class="stat-label">最新更新</span>
+              <span id="latestUpdate" class="stat-value">--</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="list-wrapper">
+          <div class="list-headline">
+            <h2>投递记录</h2>
+            <p>聚焦关键节点，随时展开详情，沉浸式地复盘你的进度。</p>
+          </div>
+          <div id="applicationList" class="application-list" aria-live="polite"></div>
+          <div id="emptyState" class="empty-state hidden">
+            <div class="empty-illustration" aria-hidden="true"></div>
+            <p class="empty-title">还没有记录</p>
+            <p class="empty-desc">点击右上角「新增投递」开启你的第一份职业旅程记录。</p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <p>Made with patience & focus · 专注你的每一次投递</p>
+      </footer>
+    </div>
+
+    <div id="detailOverlay" class="overlay" aria-hidden="true">
+      <div class="overlay-backdrop" data-close="true"></div>
+      <article class="detail-card" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+        <header class="detail-header">
+          <div>
+            <p id="detailCompany" class="detail-company"></p>
+            <h2 id="detailTitle" class="detail-position"></h2>
+          </div>
+          <div class="detail-header-actions">
+            <button id="editButton" class="ghost-button">编辑</button>
+            <button id="deleteButton" class="ghost-button danger">删除</button>
+            <button id="closeDetail" class="icon-button" aria-label="关闭详情">
+              <span></span>
+            </button>
+          </div>
+        </header>
+        <section class="stage-flow" id="stageFlow" aria-label="流程阶段"></section>
+        <section class="detail-body">
+          <div class="detail-grid">
+            <div>
+              <p class="label">状态</p>
+              <p id="detailStatus" class="value"></p>
+            </div>
+            <div>
+              <p class="label">投递时间</p>
+              <p id="detailApplied" class="value"></p>
+            </div>
+            <div>
+              <p class="label">工作性质</p>
+              <p id="detailJobType" class="value"></p>
+            </div>
+            <div>
+              <p class="label">所在城市</p>
+              <p id="detailLocation" class="value"></p>
+            </div>
+            <div>
+              <p class="label">HR / 联系方式</p>
+              <p id="detailContact" class="value"></p>
+            </div>
+            <div>
+              <p class="label">薪资预期</p>
+              <p id="detailSalary" class="value"></p>
+            </div>
+            <div>
+              <p class="label">最近更新</p>
+              <p id="detailUpdated" class="value"></p>
+            </div>
+            <div>
+              <p class="label">创建时间</p>
+              <p id="detailCreated" class="value"></p>
+            </div>
+          </div>
+          <div class="notes-section">
+            <div class="notes-headline">
+              <h3>纪要 & 准备要点</h3>
+              <p>支持 Markdown 语法，滚动查看你的备忘。</p>
+            </div>
+            <div id="detailNotes" class="notes-content markdown"></div>
+          </div>
+        </section>
+      </article>
+    </div>
+
+    <div id="formModal" class="form-modal" aria-hidden="true">
+      <div class="form-modal-backdrop" data-close="true"></div>
+      <div class="form-panel" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+        <header class="form-header">
+          <div>
+            <h2 id="formTitle">新增投递</h2>
+            <p id="formSubtitle">填写关键信息，让记录保持结构化</p>
+          </div>
+          <button id="closeForm" class="icon-button" aria-label="关闭表单">
+            <span></span>
+          </button>
+        </header>
+        <form id="applicationForm" class="application-form">
+          <div class="form-group">
+            <label for="companyInput">公司名称 *</label>
+            <input id="companyInput" name="company" type="text" required placeholder="如：Nebula Labs" />
+          </div>
+          <div class="form-group">
+            <label for="positionInput">职位名称 *</label>
+            <input id="positionInput" name="position" type="text" required placeholder="如：前端工程师" />
+          </div>
+          <div class="form-group">
+            <label for="locationInput">工作城市</label>
+            <input id="locationInput" name="location" type="text" placeholder="如：上海" />
+          </div>
+          <div class="form-group">
+            <label for="jobTypeInput">工作性质</label>
+            <input id="jobTypeInput" name="jobType" type="text" placeholder="校招 / 实习 / 全职" />
+          </div>
+          <div class="form-group">
+            <label for="appliedDateInput">投递日期</label>
+            <input id="appliedDateInput" name="appliedDate" type="date" />
+          </div>
+          <div class="form-group">
+            <label for="statusInput">当前状态</label>
+            <input id="statusInput" name="status" type="text" placeholder="如：等待面试反馈" />
+          </div>
+          <div class="form-group">
+            <label for="contactInput">联系人 / 方式</label>
+            <input id="contactInput" name="contact" type="text" placeholder="如：hr@company.com" />
+          </div>
+          <div class="form-group">
+            <label for="salaryInput">薪资预期</label>
+            <input id="salaryInput" name="salaryRange" type="text" placeholder="如：20-25K * 14" />
+          </div>
+          <div class="form-group">
+            <label for="stagesInput">流程阶段（用逗号分隔）</label>
+            <input id="stagesInput" name="stages" type="text" placeholder="投递, HR 面, 技术面, Offer" />
+          </div>
+          <div class="form-group">
+            <label for="currentStageSelect">当前所在阶段</label>
+            <select id="currentStageSelect" name="currentStage"></select>
+          </div>
+          <div class="form-group full">
+            <label for="notesInput">Markdown 备注</label>
+            <textarea
+              id="notesInput"
+              name="notes"
+              rows="6"
+              placeholder="- 关键时间节点\n- 面试总结\n- 后续跟进计划"
+            ></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="cancelForm" class="ghost-button">取消</button>
+            <button type="submit" class="primary-button">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <template id="stageStepTemplate">
+      <div class="stage-step">
+        <span class="stage-name"></span>
+        <span class="stage-indicator"></span>
+      </div>
+    </template>
+
+    <script src="./vendor/marked.min.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

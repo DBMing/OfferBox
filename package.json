@@ -1,0 +1,14 @@
+{
+  "name": "codex-playground",
+  "version": "1.0.0",
+  "description": "a demo repo resource for openai codex using in webpage",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
