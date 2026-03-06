@@ -521,8 +521,8 @@ button {
   font-size: 18px;
   font-weight: 700;
   color: white;
-  background: linear-gradient(135deg, #ff6b6b, #ff8787);
-  box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+  background: linear-gradient(135deg, #a78bfa, #c4b5fd);
+  box-shadow: 0 10px 25px rgba(167, 139, 250, 0.35);
   flex-shrink: 0;
 }
 
@@ -545,9 +545,9 @@ button {
 
 .application-card .stage-chip {
   justify-self: end;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(192, 132, 252, 0.15));
-  color: #a855f7;
-  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(167, 139, 250, 0.15));
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: 999px;
   padding: 0.35rem 0.9rem;
   font-size: 13px;
@@ -560,22 +560,22 @@ button {
   min-width: 88px;
   padding: 0.65rem 1.3rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #6366f1, #818cf8);
   color: white;
   border: none;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   transition: all 0.35s var(--transition);
-  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
   white-space: nowrap;
   text-align: center;
 }
 
 .progress-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 14px 35px rgba(16, 185, 129, 0.35);
-  background: linear-gradient(135deg, #059669, #047857);
+  box-shadow: 0 14px 35px rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
 }
 
 .progress-button:disabled {
@@ -1263,7 +1263,7 @@ button {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--accent-green), #22c55e);
+  background: linear-gradient(135deg, #60a5fa, #93c5fd);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1271,7 +1271,7 @@ button {
   font-weight: 700;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 10px 25px rgba(74, 222, 128, 0.3);
+  box-shadow: 0 10px 25px rgba(96, 165, 250, 0.35);
 }
 
 .job-card .card-info {
@@ -1302,19 +1302,21 @@ button {
 }
 
 .priority-badge.high {
-  background: linear-gradient(135deg, #ff6b6b, #ff8787);
-  color: white;
-  box-shadow: 0 6px 18px rgba(255, 107, 107, 0.3);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(248, 113, 113, 0.15));
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .priority-badge.medium {
-  background: linear-gradient(135deg, #ffd93d, #ffed4e);
-  color: #8b6914;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(252, 211, 77, 0.15));
+  color: #d97706;
+  border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
 .priority-badge.low {
-  background: rgba(35, 45, 80, 0.12);
-  color: var(--text-muted);
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.12), rgba(203, 213, 225, 0.12));
+  color: #64748b;
+  border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 /* 星级显示 */
@@ -1337,21 +1339,22 @@ button {
   min-width: 88px;
   padding: 0.65rem 1.3rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
   color: white;
   border: none;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   transition: all 0.35s var(--transition);
-  box-shadow: 0 10px 25px rgba(106, 139, 255, 0.25);
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
   white-space: nowrap;
   text-align: center;
 }
 
 .quick-apply-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 14px 35px rgba(106, 139, 255, 0.35);
+  box-shadow: 0 14px 35px rgba(139, 92, 246, 0.4);
+  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
 }
 
 .quick-apply-button:disabled {
@@ -1366,21 +1369,22 @@ button {
   min-width: 88px;
   padding: 0.65rem 1.3rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent-green), #22c55e);
+  background: linear-gradient(135deg, #10b981, #34d399);
   color: white;
   border: none;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   transition: all 0.35s var(--transition);
-  box-shadow: 0 10px 25px rgba(74, 222, 128, 0.25);
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
   white-space: nowrap;
   text-align: center;
 }
 
 .apply-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 14px 35px rgba(74, 222, 128, 0.35);
+  box-shadow: 0 14px 35px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, #059669, #10b981);
 }
 
 .apply-button:disabled,
