@@ -1,14 +1,32 @@
 {
-  "name": "codex-playground",
+  "name": "offerbox",
   "version": "1.0.0",
-  "description": "a demo repo resource for openai codex using in webpage",
+  "description": "一个专注于招聘投递流程管理的极简网页应用，帮助你优雅地管理求职全流程",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+  "keywords": [
+    "job-application",
+    "recruitment",
+    "offer-management",
+    "job-tracking",
+    "interview",
+    "career"
+  ],
+  "author": "DBMing",
+  "license": "MIT",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DBMing/OfferBox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DBMing/OfferBox/issues"
+  },
+  "homepage": "https://github.com/DBMing/OfferBox#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  }
 }

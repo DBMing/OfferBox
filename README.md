@@ -58,6 +58,37 @@ npm start
 
 首次打开会看到示例数据，你可以直接在界面内进行操作，所有改动都会实时保存到本地 JSON 文件。
 
+### 停止服务
+
+**方法一：终端中停止**
+- 在运行 `npm start` 的终端窗口中按 `Ctrl + C`（Windows/Linux）或 `Cmd + C`（macOS）
+
+**方法二：查找并关闭进程**
+
+```bash
+# 查找运行中的进程
+lsof -i :3000
+
+# 或使用
+ps aux | grep "node.*server/index.js"
+
+# 关闭进程（将 PID 替换为实际进程 ID）
+kill <PID>
+
+# 或强制关闭
+kill -9 <PID>
+```
+
+**方法三：一键关闭（macOS/Linux）**
+
+```bash
+# 关闭所有运行在 3000 端口的进程
+lsof -ti :3000 | xargs kill
+
+# 或关闭所有 OfferBox 服务进程
+pkill -f "node.*server/index.js"
+```
+
 ## 📖 使用指南
 
 ### 投递记录管理
