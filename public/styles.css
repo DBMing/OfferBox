@@ -233,6 +233,7 @@ button {
   background: linear-gradient(135deg, var(--primary), #839cff);
   color: white;
   box-shadow: 0 16px 35px rgba(100, 120, 255, 0.35);
+  min-width: 140px;
 }
 
 .primary-button:hover {
