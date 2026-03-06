@@ -56,7 +56,8 @@
 ### 💾 数据隐私保护
 
 - 🔒 **完全本地存储**：数据保存在本地 JSON 文件，不依赖云服务
-- 🔒 **隐私优先**：数据文件已添加到 `.gitignore`，不会上传到 GitHub
+- 🔒 **隐私优先**：实际数据文件已添加到 `.gitignore`，不会被 git 跟踪
+- 🔒 **自动初始化**：首次启动自动从示例文件创建数据文件
 - 🔒 **完全掌控**：你的求职数据完全属于你，随时备份和迁移
 
 ### ⚡ 技术亮点
@@ -88,6 +89,11 @@ npm start
 ```
 
 服务将在 [http://localhost:3000](http://localhost:3000) 启动。
+
+**首次启动说明：**
+- 服务启动时会自动检查数据文件是否存在
+- 如果不存在，会从 `.example.json` 示例文件自动初始化
+- 你的数据文件（`applications.json` 和 `jobs.json`）不会被 git 跟踪
 
 ### 停止服务
 
@@ -221,10 +227,12 @@ OfferBox/
 │   ├── app.js               # 核心逻辑
 │   └── styles.css           # 样式表
 ├── server/
-│   ├── index.js             # 服务器 + API
+│   ├── index.js                     # 服务器 + API
 │   └── data/
-│       ├── applications.json # 投递记录（git 忽略）
-│       └── jobs.json         # 招聘信息（git 忽略）
+│       ├── applications.example.json # 投递记录示例文件
+│       ├── applications.json         # 投递记录（git 忽略）
+│       ├── jobs.example.json         # 招聘信息示例文件
+│       └── jobs.json                 # 招聘信息（git 忽略）
 ├── .gitignore               # Git 忽略配置
 ├── package.json             # 项目配置
 └── README.md                # 项目文档

@@ -5,17 +5,49 @@ const { randomUUID } = require('crypto');
 
 const HOST = '0.0.0.0';
 const PORT = process.env.PORT || 3000;
-const DATA_PATH = path.join(__dirname, 'data', 'applications.json');
-const JOBS_DATA_PATH = path.join(__dirname, 'data', 'jobs.json');
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_PATH = path.join(DATA_DIR, 'applications.json');
+const JOBS_DATA_PATH = path.join(DATA_DIR, 'jobs.json');
+const EXAMPLE_DATA_PATH = path.join(DATA_DIR, 'applications.example.json');
+const EXAMPLE_JOBS_PATH = path.join(DATA_DIR, 'jobs.example.json');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const DEFAULT_STAGES = ['投递', '初筛', '一面', '二面', '三面', 'HR面', 'Offer'];
 
 async function ensureDataFile() {
   try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+  } catch (err) {
+    // 目录已存在，忽略错误
+  }
+
+  // 检查并初始化 applications.json
+  try {
     await fs.access(DATA_PATH);
   } catch (err) {
-    await fs.mkdir(path.dirname(DATA_PATH), { recursive: true });
-    await fs.writeFile(DATA_PATH, JSON.stringify([]), 'utf-8');
+    // 文件不存在，从示例文件复制
+    try {
+      await fs.copyFile(EXAMPLE_DATA_PATH, DATA_PATH);
+      console.log('✓ 已从示例文件初始化 applications.json');
+    } catch (copyErr) {
+      // 示例文件也不存在，创建空文件
+      await fs.writeFile(DATA_PATH, JSON.stringify([]), 'utf-8');
+      console.log('✓ 已创建空的 applications.json');
+    }
+  }
+
+  // 检查并初始化 jobs.json
+  try {
+    await fs.access(JOBS_DATA_PATH);
+  } catch (err) {
+    // 文件不存在，从示例文件复制
+    try {
+      await fs.copyFile(EXAMPLE_JOBS_PATH, JOBS_DATA_PATH);
+      console.log('✓ 已从示例文件初始化 jobs.json');
+    } catch (copyErr) {
+      // 示例文件也不存在，创建空文件
+      await fs.writeFile(JOBS_DATA_PATH, JSON.stringify([]), 'utf-8');
+      console.log('✓ 已创建空的 jobs.json');
+    }
   }
 }
 
