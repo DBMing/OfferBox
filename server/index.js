@@ -1,5 +1,6 @@
 const http = require('http');
 const fs = require('fs/promises');
+const fsSync = require('fs');
 const path = require('path');
 const { randomUUID } = require('crypto');
 
@@ -11,7 +12,48 @@ const JOBS_DATA_PATH = path.join(DATA_DIR, 'jobs.json');
 const EXAMPLE_DATA_PATH = path.join(DATA_DIR, 'applications.example.json');
 const EXAMPLE_JOBS_PATH = path.join(DATA_DIR, 'jobs.example.json');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const LOGS_DIR = path.join(__dirname, '..', 'logs');
 const DEFAULT_STAGES = ['投递', '初筛', '一面', '二面', '三面', 'HR面', 'Offer'];
+
+// 日志工具
+const logger = {
+  getTimestamp() {
+    return new Date().toISOString();
+  },
+
+  getDateString() {
+    return new Date().toISOString().split('T')[0];
+  },
+
+  ensureLogsDir() {
+    if (!fsSync.existsSync(LOGS_DIR)) {
+      fsSync.mkdirSync(LOGS_DIR, { recursive: true });
+    }
+  },
+
+  writeLog(filename, message) {
+    this.ensureLogsDir();
+    const logPath = path.join(LOGS_DIR, filename);
+    const logMessage = `[${this.getTimestamp()}] ${message}\n`;
+    fsSync.appendFileSync(logPath, logMessage, 'utf-8');
+  },
+
+  info(message) {
+    console.log(message);
+    this.writeLog('app.log', `[INFO] ${message}`);
+  },
+
+  error(message, error) {
+    const errorMsg = error ? `${message}: ${error.message}\n${error.stack}` : message;
+    console.error(errorMsg);
+    this.writeLog('error.log', `[ERROR] ${errorMsg}`);
+  },
+
+  access(method, url, statusCode, duration) {
+    const message = `${method} ${url} ${statusCode} ${duration}ms`;
+    this.writeLog('access.log', message);
+  }
+};
 
 async function ensureDataFile() {
   try {
@@ -27,11 +69,11 @@ async function ensureDataFile() {
     // 文件不存在，从示例文件复制
     try {
       await fs.copyFile(EXAMPLE_DATA_PATH, DATA_PATH);
-      console.log('✓ 已从示例文件初始化 applications.json');
+      logger.info('✓ 已从示例文件初始化 applications.json');
     } catch (copyErr) {
       // 示例文件也不存在，创建空文件
       await fs.writeFile(DATA_PATH, JSON.stringify([]), 'utf-8');
-      console.log('✓ 已创建空的 applications.json');
+      logger.info('✓ 已创建空的 applications.json');
     }
   }
 
@@ -42,11 +84,11 @@ async function ensureDataFile() {
     // 文件不存在，从示例文件复制
     try {
       await fs.copyFile(EXAMPLE_JOBS_PATH, JOBS_DATA_PATH);
-      console.log('✓ 已从示例文件初始化 jobs.json');
+      logger.info('✓ 已从示例文件初始化 jobs.json');
     } catch (copyErr) {
       // 示例文件也不存在，创建空文件
       await fs.writeFile(JOBS_DATA_PATH, JSON.stringify([]), 'utf-8');
-      console.log('✓ 已创建空的 jobs.json');
+      logger.info('✓ 已创建空的 jobs.json');
     }
   }
 }
@@ -265,7 +307,7 @@ async function handleApi(req, res, pathname) {
 
     sendJSON(res, 404, { message: '未找到对应的 API 路径' });
   } catch (error) {
-    console.error('API 错误:', error);
+    logger.error('API 错误', error);
     sendJSON(res, 500, { message: '服务器内部错误' });
   }
 }
@@ -507,35 +549,54 @@ async function handleJobsApi(req, res, pathname) {
 
     sendJSON(res, 404, { message: '未找到对应的 API 路径' });
   } catch (error) {
-    console.error('招聘信息 API 错误:', error);
+    logger.error('招聘信息 API 错误', error);
     sendJSON(res, 500, { message: '服务器内部错误' });
   }
 }
 
 const server = http.createServer(async (req, res) => {
+  const startTime = Date.now();
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = parsedUrl.pathname;
 
-  if (pathname.startsWith('/api/jobs')) {
-    await handleJobsApi(req, res, pathname);
-    return;
-  }
+  // 拦截 res.end 来记录访问日志
+  const originalEnd = res.end;
+  res.end = function (...args) {
+    const duration = Date.now() - startTime;
+    const statusCode = res.statusCode || 200;
+    logger.access(req.method, pathname, statusCode, duration);
+    originalEnd.apply(res, args);
+  };
 
-  if (pathname.startsWith('/api/applications')) {
-    await handleApi(req, res, pathname);
-    return;
-  }
+  try {
+    if (pathname.startsWith('/api/jobs')) {
+      await handleJobsApi(req, res, pathname);
+      return;
+    }
 
-  await serveStatic(req, res, pathname);
+    if (pathname.startsWith('/api/applications')) {
+      await handleApi(req, res, pathname);
+      return;
+    }
+
+    await serveStatic(req, res, pathname);
+  } catch (error) {
+    logger.error('请求处理错误', error);
+    if (!res.headersSent) {
+      sendJSON(res, 500, { message: '服务器内部错误' });
+    }
+  }
 });
 
 ensureDataFile()
   .then(() => {
     server.listen(PORT, 'localhost', () => {
-      console.log(`招聘投递记录系统已在 http://localhost:${PORT} 启动`);
+      const message = `招聘投递记录系统已在 http://localhost:${PORT} 启动`;
+      console.log(message);
+      logger.info(message);
     });
   })
   .catch((error) => {
-    console.error('无法初始化数据文件', error);
+    logger.error('无法初始化数据文件', error);
     process.exit(1);
   });

@@ -3,6 +3,10 @@
 server/data/applications.json
 server/data/jobs.json
 
+# 日志文件
+logs/*.log
+logs/*.log.*
+
 # Node.js
 node_modules/
 npm-debug.log*
