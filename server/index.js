@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const DATA_PATH = path.join(__dirname, 'data', 'applications.json');
 const JOBS_DATA_PATH = path.join(__dirname, 'data', 'jobs.json');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
-const DEFAULT_STAGES = ['投递', 'HR 面试', '技术面试', '终面', 'Offer'];
+const DEFAULT_STAGES = ['投递', '初筛', '一面', '二面', '三面', 'HR面', 'Offer'];
 
 async function ensureDataFile() {
   try {
@@ -499,8 +499,8 @@ const server = http.createServer(async (req, res) => {
 
 ensureDataFile()
   .then(() => {
-    server.listen(PORT, HOST, () => {
-      console.log(`招聘投递记录系统已在 http://${HOST}:${PORT} 启动`);
+    server.listen(PORT, 'localhost', () => {
+      console.log(`招聘投递记录系统已在 http://localhost:${PORT} 启动`);
     });
   })
   .catch((error) => {

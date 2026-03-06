@@ -1237,6 +1237,8 @@ async function handleQuickApply(jobId) {
     // 跳转到投递记录详情
     setTimeout(() => {
       navigateTo('applications');
+      renderList();
+      updateDashboard();
       openDetail(application.id);
     }, 500);
 

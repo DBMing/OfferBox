@@ -1,0 +1,35 @@
+# 数据文件 - 首次提交后，本地数据修改不会上传到 GitHub
+# 注意：首次会提交空的数据文件，之后的修改都会被忽略
+server/data/applications.json
+server/data/jobs.json
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 日志文件
+*.log
+logs/
