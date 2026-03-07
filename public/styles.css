@@ -179,8 +179,6 @@ a {
 
 /* 公司统计 */
 .company-stats {
-  position: sticky;
-  top: calc(2.8rem + var(--sidebar-height, 0px) + 1.5rem);
   height: fit-content;
   background: var(--surface);
   backdrop-filter: blur(var(--blur-amount));
