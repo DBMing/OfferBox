@@ -54,8 +54,24 @@ a {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 240px 1fr;
-  gap: 2rem;
+  grid-template-rows: auto auto 1fr;
+  gap: 1.5rem 2rem;
   padding: 2.8rem clamp(1.5rem, 5vw, 4rem);
+}
+
+.sidebar {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.company-stats {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.main-wrapper {
+  grid-column: 2;
+  grid-row: 1 / -1;
 }
 
 /* 侧边导航栏 */
@@ -163,34 +179,38 @@ a {
 
 /* 公司统计 */
 .company-stats {
-  margin: 1.5rem 0;
-  padding: 1rem;
-  background: rgba(106, 139, 255, 0.04);
-  border-radius: 12px;
-  border: 1px solid rgba(106, 139, 255, 0.1);
+  position: sticky;
+  top: calc(2.8rem + var(--sidebar-height, 0px) + 1.5rem);
+  height: fit-content;
+  background: var(--surface);
+  backdrop-filter: blur(var(--blur-amount));
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-large);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-soft);
 }
 
 .company-stats-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.8rem;
-  font-size: 13px;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-strong);
 }
 
 .stats-icon {
-  width: 16px;
-  height: 16px;
-  opacity: 0.7;
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
 }
 
 .company-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-height: 200px;
+  gap: 0.6rem;
+  max-height: 300px;
   overflow-y: auto;
 }
 
