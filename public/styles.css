@@ -54,31 +54,22 @@ a {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 240px 1fr;
-  grid-template-rows: auto auto 1fr;
-  gap: 1.5rem 2rem;
+  gap: 2rem;
   padding: 2.8rem clamp(1.5rem, 5vw, 4rem);
 }
 
-.sidebar {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.company-stats {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.main-wrapper {
-  grid-column: 2;
-  grid-row: 1 / -1;
+/* 左侧栏容器 */
+.left-sidebar-container {
+  position: sticky;
+  top: 2.8rem;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 /* 侧边导航栏 */
 .sidebar {
-  position: sticky;
-  top: 2.8rem;
-  height: fit-content;
   background: var(--surface);
   backdrop-filter: blur(var(--blur-amount));
   border: 1px solid var(--surface-border);
