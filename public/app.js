@@ -833,6 +833,9 @@ async function fetchJobs() {
       countElement.textContent = state.jobs.length;
     }
 
+    // 更新公司统计
+    updateCompanyStats();
+
     if (state.currentView === 'jobs') {
       renderJobsList();
       updateJobsStats();
@@ -851,6 +854,58 @@ function updateJobsStats() {
 
   if (totalElement) totalElement.textContent = totalCount;
   if (pendingElement) pendingElement.textContent = pendingCount;
+}
+
+function updateCompanyStats() {
+  const companyStatsList = document.getElementById('companyStatsList');
+  if (!companyStatsList) return;
+
+  // 统计每个公司的职位数量
+  const companyMap = new Map();
+
+  state.jobs.forEach(job => {
+    const company = job.company || '未知公司';
+    if (companyMap.has(company)) {
+      companyMap.set(company, companyMap.get(company) + 1);
+    } else {
+      companyMap.set(company, 1);
+    }
+  });
+
+  // 清空列表
+  companyStatsList.innerHTML = '';
+
+  // 如果没有数据，显示空状态
+  if (companyMap.size === 0) {
+    companyStatsList.innerHTML = '<div class="company-stats-empty">暂无数据</div>';
+    return;
+  }
+
+  // 按公司名称排序
+  const sortedCompanies = Array.from(companyMap.entries()).sort((a, b) => {
+    return a[0].localeCompare(b[0], 'zh-CN');
+  });
+
+  // 渲染公司列表
+  sortedCompanies.forEach(([company, count]) => {
+    const item = document.createElement('div');
+    item.className = 'company-item';
+    item.innerHTML = `
+      <span class="company-name" title="${company}">${company}</span>
+      <span class="company-count">${count}</span>
+    `;
+
+    // 点击时跳转到招聘信息库并可以考虑筛选该公司
+    item.addEventListener('click', () => {
+      // 切换到招聘信息库视图
+      const jobsNavItem = document.querySelector('.nav-item[data-view="jobs"]');
+      if (jobsNavItem) {
+        jobsNavItem.click();
+      }
+    });
+
+    companyStatsList.appendChild(item);
+  });
 }
 
 // ==================== 招聘信息渲染 ====================
